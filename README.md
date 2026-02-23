@@ -55,6 +55,21 @@ This project is a lightweight OpenMRS-inspired hospital management system with t
 - Patient Transfer / Discharge workflows (transactional care-flow APIs)
 - Mobile Access dashboard (client registry + SDK hardening probe)
 - Uganda MoH HMIS compliance layer (HMIS report tracking, IDSR/notifiable timeliness, compliance dashboard)
+- Referral management & tracking
+- Client management & credit control
+- Accident & emergency care
+- Day care management
+- Payment processing gateway flow
+- Accounting & Budget Management (hospital chart hierarchy, posting controls, trial balance, budget variance)
+- Patient monitoring and waiting-time analytics
+- Chat / messaging
+- Electronic laboratory notebook
+- Role-specific UI shells:
+  - `frontend/src/pages/admin` (Admin Console UI)
+  - `frontend/src/pages/clinical` (Doctor/Nurse Workspace UI)
+  - `frontend/src/pages/reception` (Front-Desk UI)
+  - `frontend/src/pages/patient` (Minimal Self-Service UI)
+  - `frontend/src/pages/shared` (Shared/global pages)
 
 ## Run backend
 
@@ -206,8 +221,20 @@ All seeded users use the same password: `ChangeMe123!`
 - `GET/POST/PUT/DELETE /api/barcode-labels`
 - `GET/POST/PUT/DELETE /api/print-jobs`
 - `GET/POST/PUT/DELETE /api/accounting-policy`
+- `GET/POST/PUT/DELETE /api/accounting-periods`
 - `GET/POST/PUT/DELETE /api/chart-accounts`
 - `GET/POST/PUT/DELETE /api/journal-entries`
+- `GET/POST/PUT/DELETE /api/journal-entry-lines`
+- `GET/POST/PUT/DELETE /api/budgets`
+- `GET/POST/PUT/DELETE /api/budget-lines`
+- `POST /api/accounting/chart-of-accounts/seed-uganda-hospital`
+- `POST /api/accounting/chart-of-accounts/import-template` (bulk import exact account codebook)
+- `GET /api/accounting/chart-of-accounts/tree`
+- `POST /api/accounting/journal-entries/:id/post`
+- `GET /api/accounting/trial-balance?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /api/accounting/budget-variance?budgetId=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `POST /api/accounting/budgets/:id/approve`
+- `POST /api/accounting/budgets/:id/lock`
 - `GET/POST/PUT/DELETE /api/vendors`
 - `GET/POST/PUT/DELETE /api/purchase-orders`
 - `GET/POST/PUT/DELETE /api/purchase-order-lines`
@@ -236,7 +263,35 @@ All seeded users use the same password: `ChangeMe123!`
 - `GET/POST/PUT/DELETE /api/prescription-renewal-requests`
 - `GET/POST/PUT/DELETE /api/prescription-cancellation-requests`
 - `GET/POST/PUT/DELETE /api/care-summary-exchanges`
+- `GET/POST/PUT/DELETE /api/referrals`
+- `GET/POST/PUT/DELETE /api/client-accounts`
+- `GET/POST/PUT/DELETE /api/credit-control-events`
+- `GET/POST/PUT/DELETE /api/emergency-cases`
+- `GET/POST/PUT/DELETE /api/day-care-episodes`
+- `GET/POST/PUT/DELETE /api/payment-gateway-transactions`
+- `GET/POST/PUT/DELETE /api/patient-monitoring-records`
+- `GET /api/operations/waiting-time-analytics?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /api/operations/patient-monitoring-summary?patientId=<id>`
+- `GET /api/operations/ae-kpis?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `POST /api/operations/payment-gateway/process`
+- `POST /api/payment-webhooks/:gateway` (signature header: `x-signature` or `x-emrs-signature`; HMAC SHA256)
+- `GET/POST/PUT/DELETE /api/chat-threads`
+- `GET/POST/PUT/DELETE /api/chat-thread-participants`
+- `GET/POST/PUT/DELETE /api/chat-messages`
+- `GET /api/chat/my-threads`
+- `POST /api/chat/threads`
+- `GET /api/chat/threads/:threadId/messages`
+- `POST /api/chat/threads/:threadId/messages`
+- `GET /api/chat/search-users?q=<query>`
+- `GET/POST/PUT/DELETE /api/electronic-lab-notebook-entries`
+
+Realtime chat websocket endpoint:
+- `ws://localhost:4000/ws/chat?token=<accessToken>`
 
 All module endpoints except `/api/health`, `/api/auth/login`, and `/api/auth/refresh` require a valid access token.
 
 Patient-role users can only access their own data in `GET /api/portal/patient-summary` (self-scoped by linked `patientId`).
+
+Uganda CoA note:
+- The app includes a Uganda hospital chart-of-accounts template seed with parent-child account hierarchy and normal balance rules.
+- If your facility follows a stricter UCMB codebook variant, update seeded account codes/names in `backend/src/routes/accounting.js` to match your official finance policy document exactly.

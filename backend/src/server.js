@@ -1,6 +1,8 @@
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
+const http = require("http");
 const app = require("./app");
+const { initChatWebSocketServer } = require("./services/chatRealtime");
 const {
   sequelize,
   Department,
@@ -132,7 +134,9 @@ async function start() {
     await sequelize.authenticate();
     await sequelize.sync({ alter: true });
     await seed();
-    app.listen(port, () => {
+    const server = http.createServer(app);
+    initChatWebSocketServer(server);
+    server.listen(port, () => {
       console.log(`EMRS backend running at http://localhost:${port}`);
     });
   } catch (error) {

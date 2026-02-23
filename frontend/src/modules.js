@@ -418,6 +418,164 @@ export const moduleConfigs = [
     columns: []
   },
   {
+    key: "referrals",
+    title: "Referrals",
+    fields: [
+      { name: "referralNumber", label: "Referral Number", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn", required: true },
+      { name: "fromProviderId", label: "From Provider", type: "relation", relation: "providers", display: "providerCode" },
+      { name: "toProviderId", label: "To Provider", type: "relation", relation: "providers", display: "providerCode" },
+      { name: "referralType", label: "Type", type: "select", options: ["Internal", "External"] },
+      { name: "destinationFacility", label: "Destination Facility" },
+      { name: "destinationDepartment", label: "Destination Department" },
+      { name: "reason", label: "Reason" },
+      { name: "status", label: "Status", type: "select", options: ["Draft", "Sent", "Accepted", "Completed", "Declined"] },
+      { name: "referredAt", label: "Referred At", type: "datetime-local" }
+    ],
+    columns: ["referralNumber", "patientId", "fromProviderId", "toProviderId", "referralType", "status", "referredAt"]
+  },
+  {
+    key: "client-accounts",
+    title: "Client Accounts",
+    fields: [
+      { name: "accountNumber", label: "Account Number", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn" },
+      { name: "accountType", label: "Type", type: "select", options: ["Patient", "Corporate", "Insurance"] },
+      { name: "creditLimit", label: "Credit Limit", type: "number" },
+      { name: "currentBalance", label: "Current Balance", type: "number" },
+      { name: "status", label: "Status", type: "select", options: ["Active", "OnHold", "Closed"] }
+    ],
+    columns: ["accountNumber", "patientId", "accountType", "creditLimit", "currentBalance", "status"]
+  },
+  {
+    key: "credit-control-events",
+    title: "Credit Control",
+    fields: [
+      { name: "eventNumber", label: "Event Number", required: true },
+      { name: "clientAccountId", label: "Client Account", type: "relation", relation: "client-accounts", display: "accountNumber", required: true },
+      { name: "eventType", label: "Type", type: "select", options: ["Reminder", "Escalation", "PaymentPlan", "WriteOff", "Collection"] },
+      { name: "amount", label: "Amount", type: "number" },
+      { name: "dueDate", label: "Due Date", type: "date" },
+      { name: "status", label: "Status", type: "select", options: ["Open", "Resolved", "Cancelled"] },
+      { name: "notes", label: "Notes" }
+    ],
+    columns: ["eventNumber", "clientAccountId", "eventType", "amount", "dueDate", "status"]
+  },
+  {
+    key: "emergency-cases",
+    title: "Accident & Emergency",
+    fields: [
+      { name: "caseNumber", label: "Case Number", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn", required: true },
+      { name: "visitId", label: "Visit", type: "relation", relation: "visits", display: "id" },
+      { name: "triagedByProviderId", label: "Triaged By", type: "relation", relation: "providers", display: "providerCode" },
+      { name: "arrivalAt", label: "Arrival At", type: "datetime-local", required: true },
+      { name: "triagedAt", label: "Triaged At", type: "datetime-local" },
+      { name: "providerSeenAt", label: "Provider Seen At", type: "datetime-local" },
+      { name: "triageLevel", label: "Triage Level", type: "select", options: ["Red", "Orange", "Yellow", "Green", "Black"] },
+      { name: "chiefComplaint", label: "Chief Complaint" },
+      { name: "modeOfArrival", label: "Mode of Arrival" },
+      { name: "status", label: "Status", type: "select", options: ["Triage", "UnderTreatment", "Stabilized", "Admitted", "Discharged", "Referred"] },
+      { name: "disposition", label: "Disposition" }
+    ],
+    columns: ["caseNumber", "patientId", "arrivalAt", "triagedAt", "providerSeenAt", "triageLevel", "status", "disposition"]
+  },
+  {
+    key: "day-care-episodes",
+    title: "Day Care Episodes",
+    fields: [
+      { name: "episodeNumber", label: "Episode Number", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn", required: true },
+      { name: "providerId", label: "Provider", type: "relation", relation: "providers", display: "providerCode" },
+      { name: "procedureName", label: "Procedure" },
+      { name: "plannedStart", label: "Planned Start", type: "datetime-local" },
+      { name: "plannedEnd", label: "Planned End", type: "datetime-local" },
+      { name: "actualStart", label: "Actual Start", type: "datetime-local" },
+      { name: "actualEnd", label: "Actual End", type: "datetime-local" },
+      { name: "status", label: "Status", type: "select", options: ["Scheduled", "InProgress", "Completed", "Cancelled"] },
+      { name: "outcome", label: "Outcome" }
+    ],
+    columns: ["episodeNumber", "patientId", "providerId", "procedureName", "status", "plannedStart", "actualEnd"]
+  },
+  {
+    key: "payment-gateway-transactions",
+    title: "Gateway Transactions",
+    fields: [
+      { name: "transactionNumber", label: "Transaction Number", required: true },
+      { name: "invoiceId", label: "Invoice", type: "relation", relation: "invoices", display: "id", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn", required: true },
+      { name: "gatewayName", label: "Gateway", type: "select", options: ["Flutterwave", "MTNMoMo", "AirtelMoney", "Stripe", "Custom"] },
+      { name: "externalReference", label: "External Ref" },
+      { name: "amount", label: "Amount", type: "number", required: true },
+      { name: "currency", label: "Currency" },
+      { name: "status", label: "Status", type: "select", options: ["Initiated", "Authorized", "Captured", "Failed", "Voided"] }
+    ],
+    columns: ["transactionNumber", "invoiceId", "patientId", "gatewayName", "amount", "currency", "status"]
+  },
+  {
+    key: "patient-monitoring-records",
+    title: "Patient Monitoring",
+    fields: [
+      { name: "recordNumber", label: "Record Number", required: true },
+      { name: "patientId", label: "Patient", type: "relation", relation: "patients", display: "mrn", required: true },
+      { name: "encounterId", label: "Encounter", type: "relation", relation: "encounters", display: "id" },
+      { name: "providerId", label: "Provider", type: "relation", relation: "providers", display: "providerCode" },
+      { name: "monitoredAt", label: "Monitored At", type: "datetime-local" },
+      { name: "heartRate", label: "Heart Rate", type: "number" },
+      { name: "respiratoryRate", label: "Respiratory Rate", type: "number" },
+      { name: "temperatureC", label: "Temperature C", type: "number" },
+      { name: "systolicBp", label: "Systolic BP", type: "number" },
+      { name: "diastolicBp", label: "Diastolic BP", type: "number" },
+      { name: "spo2Percent", label: "SpO2 %", type: "number" },
+      { name: "painScore", label: "Pain Score", type: "number" },
+      { name: "alertLevel", label: "Alert", type: "select", options: ["Normal", "Warning", "Critical"] },
+      { name: "notes", label: "Notes" }
+    ],
+    columns: ["recordNumber", "patientId", "monitoredAt", "heartRate", "temperatureC", "spo2Percent", "alertLevel"]
+  },
+  {
+    key: "chat-messaging",
+    title: "Chat / Messaging",
+    fields: [],
+    columns: []
+  },
+  {
+    key: "waiting-time-analytics",
+    title: "Waiting Time Analytics",
+    fields: [],
+    columns: []
+  },
+  {
+    key: "ae-kpi-dashboard",
+    title: "A&E KPI Dashboard",
+    fields: [],
+    columns: []
+  },
+  {
+    key: "payment-gateway",
+    title: "Payment Gateway",
+    fields: [],
+    columns: []
+  },
+  {
+    key: "electronic-lab-notebook-entries",
+    title: "Electronic Lab Notebook",
+    fields: [
+      { name: "entryNumber", label: "Entry Number", required: true },
+      { name: "labOrderId", label: "Lab Order", type: "relation", relation: "lab-orders", display: "orderNumber" },
+      { name: "labResultId", label: "Lab Result", type: "relation", relation: "lab-results", display: "resultNumber" },
+      { name: "experimentTitle", label: "Experiment Title", required: true },
+      { name: "notebookSection", label: "Notebook Section" },
+      { name: "hypothesis", label: "Hypothesis" },
+      { name: "method", label: "Method" },
+      { name: "observations", label: "Observations" },
+      { name: "conclusion", label: "Conclusion" },
+      { name: "signedBy", label: "Signed By" },
+      { name: "signedAt", label: "Signed At", type: "datetime-local" }
+    ],
+    columns: ["entryNumber", "labOrderId", "labResultId", "experimentTitle", "notebookSection", "signedBy", "signedAt"]
+  },
+  {
     key: "revenue-analytics",
     title: "Revenue & Analytics",
     fields: [],
@@ -744,6 +902,12 @@ export const moduleConfigs = [
     columns: ["jobNumber", "templateName", "printerName", "status", "printedAt"]
   },
   {
+    key: "accounting-management",
+    title: "Accounting & Budget",
+    fields: [],
+    columns: []
+  },
+  {
     key: "accounting-policy",
     title: "Accounting Policy",
     fields: [
@@ -763,9 +927,27 @@ export const moduleConfigs = [
       { name: "accountCode", label: "Account Code", required: true },
       { name: "accountName", label: "Account Name", required: true },
       { name: "accountType", label: "Type", type: "select", options: ["Asset", "Liability", "Equity", "Revenue", "Expense"], required: true },
+      { name: "accountClass", label: "Class" },
+      { name: "normalBalance", label: "Normal Balance", type: "select", options: ["Debit", "Credit"] },
+      { name: "parentAccountId", label: "Parent Account", type: "relation", relation: "chart-accounts", display: "accountName" },
+      { name: "level", label: "Level", type: "number" },
+      { name: "isPostingAllowed", label: "Posting Allowed", type: "select", options: ["true", "false"] },
       { name: "isActive", label: "Active", type: "select", options: ["true", "false"] }
     ],
-    columns: ["accountCode", "accountName", "accountType", "isActive"]
+    columns: ["accountCode", "accountName", "accountType", "accountClass", "parentAccountId", "isPostingAllowed", "isActive"]
+  },
+  {
+    key: "accounting-periods",
+    title: "Accounting Periods",
+    fields: [
+      { name: "periodCode", label: "Period Code", required: true },
+      { name: "periodName", label: "Period Name", required: true },
+      { name: "fiscalYear", label: "Fiscal Year", type: "number", required: true },
+      { name: "startDate", label: "Start Date", type: "date", required: true },
+      { name: "endDate", label: "End Date", type: "date", required: true },
+      { name: "status", label: "Status", type: "select", options: ["Open", "Closed"] }
+    ],
+    columns: ["periodCode", "periodName", "fiscalYear", "startDate", "endDate", "status"]
   },
   {
     key: "journal-entries",
@@ -773,13 +955,61 @@ export const moduleConfigs = [
     fields: [
       { name: "entryNumber", label: "Entry Number", required: true },
       { name: "entryDate", label: "Entry Date", type: "date", required: true },
-      { name: "chartAccountId", label: "Chart Account", type: "relation", relation: "chart-accounts", display: "accountName", required: true },
-      { name: "debitAmount", label: "Debit", type: "number", required: true },
-      { name: "creditAmount", label: "Credit", type: "number", required: true },
+      { name: "accountingPeriodId", label: "Accounting Period", type: "relation", relation: "accounting-periods", display: "periodCode" },
+      { name: "referenceNumber", label: "Reference Number" },
+      { name: "sourceModule", label: "Source Module" },
+      { name: "chartAccountId", label: "Header Account", type: "relation", relation: "chart-accounts", display: "accountName" },
+      { name: "debitAmount", label: "Header Debit", type: "number" },
+      { name: "creditAmount", label: "Header Credit", type: "number" },
       { name: "status", label: "Status", type: "select", options: ["Draft", "Posted"] },
       { name: "description", label: "Description" }
     ],
-    columns: ["entryNumber", "entryDate", "chartAccountId", "debitAmount", "creditAmount", "status"]
+    columns: ["entryNumber", "entryDate", "accountingPeriodId", "referenceNumber", "debitAmount", "creditAmount", "status"]
+  },
+  {
+    key: "journal-entry-lines",
+    title: "Journal Entry Lines",
+    fields: [
+      { name: "journalEntryId", label: "Journal Entry", type: "relation", relation: "journal-entries", display: "entryNumber", required: true },
+      { name: "lineNumber", label: "Line Number", type: "number" },
+      { name: "chartAccountId", label: "Account", type: "relation", relation: "chart-accounts", display: "accountName", required: true },
+      { name: "debitAmount", label: "Debit", type: "number" },
+      { name: "creditAmount", label: "Credit", type: "number" },
+      { name: "description", label: "Description" }
+    ],
+    columns: ["journalEntryId", "lineNumber", "chartAccountId", "debitAmount", "creditAmount"]
+  },
+  {
+    key: "budgets",
+    title: "Budgets",
+    fields: [
+      { name: "budgetCode", label: "Budget Code", required: true },
+      { name: "budgetName", label: "Budget Name", required: true },
+      { name: "fiscalYear", label: "Fiscal Year", type: "number", required: true },
+      { name: "versionNumber", label: "Version", type: "number" },
+      { name: "accountingPeriodId", label: "Accounting Period", type: "relation", relation: "accounting-periods", display: "periodCode" },
+      { name: "status", label: "Status", type: "select", options: ["Draft", "Approved", "Locked"] },
+      { name: "notes", label: "Notes" }
+    ],
+    columns: ["budgetCode", "budgetName", "fiscalYear", "versionNumber", "status", "totalAmount"]
+  },
+  {
+    key: "budget-lines",
+    title: "Budget Lines",
+    fields: [
+      { name: "budgetId", label: "Budget", type: "relation", relation: "budgets", display: "budgetCode", required: true },
+      { name: "lineNumber", label: "Line Number", type: "number" },
+      { name: "chartAccountId", label: "Chart Account", type: "relation", relation: "chart-accounts", display: "accountName", required: true },
+      { name: "costCenter", label: "Cost Center" },
+      { name: "departmentName", label: "Department" },
+      { name: "annualAmount", label: "Annual Amount", type: "number", required: true },
+      { name: "q1Amount", label: "Q1", type: "number" },
+      { name: "q2Amount", label: "Q2", type: "number" },
+      { name: "q3Amount", label: "Q3", type: "number" },
+      { name: "q4Amount", label: "Q4", type: "number" },
+      { name: "notes", label: "Notes" }
+    ],
+    columns: ["budgetId", "chartAccountId", "costCenter", "departmentName", "annualAmount", "q1Amount", "q2Amount", "q3Amount", "q4Amount"]
   },
   {
     key: "vendors",

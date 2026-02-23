@@ -53,8 +53,12 @@ const MobileClient = require("./mobileClient")(sequelize);
 const BarcodeLabel = require("./barcodeLabel")(sequelize);
 const PrintJob = require("./printJob")(sequelize);
 const AccountingPolicy = require("./accountingPolicy")(sequelize);
+const AccountingPeriod = require("./accountingPeriod")(sequelize);
 const ChartAccount = require("./chartAccount")(sequelize);
 const JournalEntry = require("./journalEntry")(sequelize);
+const JournalEntryLine = require("./journalEntryLine")(sequelize);
+const Budget = require("./budget")(sequelize);
+const BudgetLine = require("./budgetLine")(sequelize);
 const Vendor = require("./vendor")(sequelize);
 const PurchaseOrder = require("./purchaseOrder")(sequelize);
 const PurchaseOrderLine = require("./purchaseOrderLine")(sequelize);
@@ -83,6 +87,17 @@ const EmCodingRecord = require("./emCodingRecord")(sequelize);
 const PrescriptionRenewalRequest = require("./prescriptionRenewalRequest")(sequelize);
 const PrescriptionCancellationRequest = require("./prescriptionCancellationRequest")(sequelize);
 const CareSummaryExchange = require("./careSummaryExchange")(sequelize);
+const Referral = require("./referral")(sequelize);
+const ClientAccount = require("./clientAccount")(sequelize);
+const CreditControlEvent = require("./creditControlEvent")(sequelize);
+const EmergencyCase = require("./emergencyCase")(sequelize);
+const DayCareEpisode = require("./dayCareEpisode")(sequelize);
+const PaymentGatewayTransaction = require("./paymentGatewayTransaction")(sequelize);
+const PatientMonitoringRecord = require("./patientMonitoringRecord")(sequelize);
+const ChatThread = require("./chatThread")(sequelize);
+const ChatThreadParticipant = require("./chatThreadParticipant")(sequelize);
+const ChatMessage = require("./chatMessage")(sequelize);
+const ElectronicLabNotebookEntry = require("./electronicLabNotebookEntry")(sequelize);
 const ServiceCatalog = require("./serviceCatalog")(sequelize);
 const PricingRule = require("./pricingRule")(sequelize);
 const ServicePackage = require("./servicePackage")(sequelize);
@@ -449,6 +464,24 @@ EmCodingRecord.belongsTo(Provider, { foreignKey: "providerId" });
 
 ChartAccount.hasMany(JournalEntry, { foreignKey: "chartAccountId" });
 JournalEntry.belongsTo(ChartAccount, { foreignKey: "chartAccountId" });
+ChartAccount.hasMany(ChartAccount, { foreignKey: "parentAccountId", as: "children" });
+ChartAccount.belongsTo(ChartAccount, { foreignKey: "parentAccountId", as: "parent" });
+
+AccountingPeriod.hasMany(JournalEntry, { foreignKey: "accountingPeriodId" });
+JournalEntry.belongsTo(AccountingPeriod, { foreignKey: "accountingPeriodId" });
+JournalEntry.hasMany(JournalEntryLine, { foreignKey: "journalEntryId", as: "lines" });
+JournalEntryLine.belongsTo(JournalEntry, { foreignKey: "journalEntryId" });
+ChartAccount.hasMany(JournalEntryLine, { foreignKey: "chartAccountId" });
+JournalEntryLine.belongsTo(ChartAccount, { foreignKey: "chartAccountId" });
+User.hasMany(JournalEntry, { foreignKey: "postedByUserId" });
+JournalEntry.belongsTo(User, { foreignKey: "postedByUserId", as: "postedBy" });
+
+AccountingPeriod.hasMany(Budget, { foreignKey: "accountingPeriodId" });
+Budget.belongsTo(AccountingPeriod, { foreignKey: "accountingPeriodId" });
+Budget.hasMany(BudgetLine, { foreignKey: "budgetId", as: "lines" });
+BudgetLine.belongsTo(Budget, { foreignKey: "budgetId" });
+ChartAccount.hasMany(BudgetLine, { foreignKey: "chartAccountId" });
+BudgetLine.belongsTo(ChartAccount, { foreignKey: "chartAccountId" });
 
 Prescription.hasMany(PrescriptionRenewalRequest, { foreignKey: "prescriptionId" });
 Prescription.hasMany(PrescriptionCancellationRequest, { foreignKey: "prescriptionId" });
@@ -461,6 +494,62 @@ PrescriptionCancellationRequest.belongsTo(Patient, { foreignKey: "patientId" });
 
 Patient.hasMany(CareSummaryExchange, { foreignKey: "patientId" });
 CareSummaryExchange.belongsTo(Patient, { foreignKey: "patientId" });
+
+Patient.hasMany(Referral, { foreignKey: "patientId" });
+Provider.hasMany(Referral, { foreignKey: "fromProviderId" });
+Provider.hasMany(Referral, { foreignKey: "toProviderId" });
+Referral.belongsTo(Patient, { foreignKey: "patientId" });
+Referral.belongsTo(Provider, { foreignKey: "fromProviderId", as: "fromProvider" });
+Referral.belongsTo(Provider, { foreignKey: "toProviderId", as: "toProvider" });
+
+Patient.hasMany(ClientAccount, { foreignKey: "patientId" });
+ClientAccount.belongsTo(Patient, { foreignKey: "patientId" });
+ClientAccount.hasMany(CreditControlEvent, { foreignKey: "clientAccountId", as: "creditEvents" });
+CreditControlEvent.belongsTo(ClientAccount, { foreignKey: "clientAccountId" });
+User.hasMany(CreditControlEvent, { foreignKey: "actionByUserId" });
+CreditControlEvent.belongsTo(User, { foreignKey: "actionByUserId", as: "actionBy" });
+
+Patient.hasMany(EmergencyCase, { foreignKey: "patientId" });
+Provider.hasMany(EmergencyCase, { foreignKey: "triagedByProviderId" });
+EmergencyCase.belongsTo(Patient, { foreignKey: "patientId" });
+EmergencyCase.belongsTo(Provider, { foreignKey: "triagedByProviderId", as: "triagedBy" });
+Visit.hasOne(EmergencyCase, { foreignKey: "visitId" });
+EmergencyCase.belongsTo(Visit, { foreignKey: "visitId" });
+
+Patient.hasMany(DayCareEpisode, { foreignKey: "patientId" });
+Provider.hasMany(DayCareEpisode, { foreignKey: "providerId" });
+DayCareEpisode.belongsTo(Patient, { foreignKey: "patientId" });
+DayCareEpisode.belongsTo(Provider, { foreignKey: "providerId" });
+
+Invoice.hasMany(PaymentGatewayTransaction, { foreignKey: "invoiceId" });
+Patient.hasMany(PaymentGatewayTransaction, { foreignKey: "patientId" });
+Payment.hasOne(PaymentGatewayTransaction, { foreignKey: "paymentId" });
+PaymentGatewayTransaction.belongsTo(Invoice, { foreignKey: "invoiceId" });
+PaymentGatewayTransaction.belongsTo(Patient, { foreignKey: "patientId" });
+PaymentGatewayTransaction.belongsTo(Payment, { foreignKey: "paymentId" });
+
+Patient.hasMany(PatientMonitoringRecord, { foreignKey: "patientId" });
+Encounter.hasMany(PatientMonitoringRecord, { foreignKey: "encounterId" });
+Provider.hasMany(PatientMonitoringRecord, { foreignKey: "providerId" });
+PatientMonitoringRecord.belongsTo(Patient, { foreignKey: "patientId" });
+PatientMonitoringRecord.belongsTo(Encounter, { foreignKey: "encounterId" });
+PatientMonitoringRecord.belongsTo(Provider, { foreignKey: "providerId" });
+
+ChatThread.hasMany(ChatThreadParticipant, { foreignKey: "chatThreadId", as: "participants" });
+ChatThreadParticipant.belongsTo(ChatThread, { foreignKey: "chatThreadId" });
+User.hasMany(ChatThreadParticipant, { foreignKey: "userId" });
+ChatThreadParticipant.belongsTo(User, { foreignKey: "userId" });
+ChatThread.hasMany(ChatMessage, { foreignKey: "chatThreadId", as: "messages" });
+ChatMessage.belongsTo(ChatThread, { foreignKey: "chatThreadId" });
+User.hasMany(ChatMessage, { foreignKey: "senderUserId" });
+ChatMessage.belongsTo(User, { foreignKey: "senderUserId", as: "sender" });
+
+LabOrder.hasMany(ElectronicLabNotebookEntry, { foreignKey: "labOrderId", as: "notebookEntries" });
+LabResult.hasMany(ElectronicLabNotebookEntry, { foreignKey: "labResultId", as: "notebookEntries" });
+User.hasMany(ElectronicLabNotebookEntry, { foreignKey: "createdByUserId" });
+ElectronicLabNotebookEntry.belongsTo(LabOrder, { foreignKey: "labOrderId" });
+ElectronicLabNotebookEntry.belongsTo(LabResult, { foreignKey: "labResultId" });
+ElectronicLabNotebookEntry.belongsTo(User, { foreignKey: "createdByUserId", as: "createdBy" });
 
 User.hasMany(HmisReportSubmission, { foreignKey: "submittedByUserId" });
 HmisReportSubmission.belongsTo(User, { foreignKey: "submittedByUserId", as: "submittedBy" });
@@ -524,8 +613,12 @@ module.exports = {
   BarcodeLabel,
   PrintJob,
   AccountingPolicy,
+  AccountingPeriod,
   ChartAccount,
   JournalEntry,
+  JournalEntryLine,
+  Budget,
+  BudgetLine,
   Vendor,
   PurchaseOrder,
   PurchaseOrderLine,
@@ -554,6 +647,17 @@ module.exports = {
   PrescriptionRenewalRequest,
   PrescriptionCancellationRequest,
   CareSummaryExchange,
+  Referral,
+  ClientAccount,
+  CreditControlEvent,
+  EmergencyCase,
+  DayCareEpisode,
+  PaymentGatewayTransaction,
+  PatientMonitoringRecord,
+  ChatThread,
+  ChatThreadParticipant,
+  ChatMessage,
+  ElectronicLabNotebookEntry,
   ServiceCatalog,
   PricingRule,
   ServicePackage,

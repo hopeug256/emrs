@@ -19,6 +19,10 @@ const billingRoutes = require("./billing");
 const calendarRoutes = require("./calendar");
 const careFlowRoutes = require("./careFlow");
 const hmisRoutes = require("./hmis");
+const operationsRoutes = require("./operations");
+const chatRoutes = require("./chat");
+const paymentWebhooksRoutes = require("./paymentWebhooks");
+const accountingRoutes = require("./accounting");
 const authenticate = require("../middleware/auth");
 const enforcePasswordChange = require("../middleware/enforcePasswordChange");
 const authorize = require("../middleware/authorize");
@@ -33,6 +37,7 @@ const {
   Medication,
   Prescription,
   Invoice,
+  User,
   TheatreRoom,
   TheatreProcedure,
   Surgery,
@@ -68,8 +73,12 @@ const {
   BarcodeLabel,
   PrintJob,
   AccountingPolicy,
+  AccountingPeriod,
   ChartAccount,
   JournalEntry,
+  JournalEntryLine,
+  Budget,
+  BudgetLine,
   Vendor,
   PurchaseOrder,
   PurchaseOrderLine,
@@ -112,7 +121,18 @@ const {
   PatientTransfer,
   DischargeSummary,
   HmisReportSubmission,
-  DiseaseSurveillanceReport
+  DiseaseSurveillanceReport,
+  Referral,
+  ClientAccount,
+  CreditControlEvent,
+  EmergencyCase,
+  DayCareEpisode,
+  PaymentGatewayTransaction,
+  PatientMonitoringRecord,
+  ChatThread,
+  ChatThreadParticipant,
+  ChatMessage,
+  ElectronicLabNotebookEntry
 } = require("../models");
 
 const router = express.Router();
@@ -125,6 +145,8 @@ router.use("/auth", authRoutes);
 router.get("/health", (req, res) => {
   res.json({ status: "ok", service: "emrs-backend" });
 });
+
+router.use("/payment-webhooks", paymentWebhooksRoutes);
 
 router.use("/mobile", mobileGuard, mobileRoutes);
 
@@ -229,6 +251,18 @@ router.use(
     include: [{ model: Department }],
     searchFields: ["providerCode", "firstName", "lastName", "specialty"],
     createRequired: ["providerCode", "firstName", "lastName"]
+  })
+);
+
+router.use(
+  "/referrals",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: CLINICAL, PUT: CLINICAL, DELETE: ["admin", "doctor"] }),
+  createResourceRouter(Referral, {
+    include: [{ model: Patient }, { model: Provider, as: "fromProvider" }, { model: Provider, as: "toProvider" }],
+    searchFields: ["referralNumber", "destinationFacility", "destinationDepartment", "status"],
+    createRequired: ["referralNumber", "patientId"]
   })
 );
 
@@ -428,6 +462,42 @@ router.use(
     include: [{ model: Invoice }, { model: Patient }],
     searchFields: ["paymentNumber", "method", "status", "reference"],
     createRequired: ["paymentNumber", "invoiceId", "patientId", "amount"]
+  })
+);
+
+router.use(
+  "/client-accounts",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: FRONT_DESK, PUT: FRONT_DESK, DELETE: ["admin"] }),
+  createResourceRouter(ClientAccount, {
+    include: [{ model: Patient }, { model: CreditControlEvent, as: "creditEvents" }],
+    searchFields: ["accountNumber", "accountType", "status"],
+    createRequired: ["accountNumber"]
+  })
+);
+
+router.use(
+  "/credit-control-events",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: FRONT_DESK, PUT: FRONT_DESK, DELETE: ["admin"] }),
+  createResourceRouter(CreditControlEvent, {
+    include: [{ model: ClientAccount }, { model: User, as: "actionBy" }],
+    searchFields: ["eventNumber", "eventType", "status"],
+    createRequired: ["eventNumber", "clientAccountId"]
+  })
+);
+
+router.use(
+  "/payment-gateway-transactions",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: FRONT_DESK, PUT: FRONT_DESK, DELETE: ["admin"] }),
+  createResourceRouter(PaymentGatewayTransaction, {
+    include: [{ model: Invoice }, { model: Patient }, { model: Payment }],
+    searchFields: ["transactionNumber", "gatewayName", "status", "externalReference"],
+    createRequired: ["transactionNumber", "invoiceId", "patientId", "amount"]
   })
 );
 
@@ -655,6 +725,18 @@ router.use(
 );
 
 router.use(
+  "/electronic-lab-notebook-entries",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: CLINICAL, POST: CLINICAL, PUT: CLINICAL, DELETE: ["admin", "doctor"] }),
+  createResourceRouter(ElectronicLabNotebookEntry, {
+    include: [{ model: LabOrder }, { model: LabResult }, { model: User, as: "createdBy" }],
+    searchFields: ["entryNumber", "notebookSection", "experimentTitle"],
+    createRequired: ["entryNumber", "experimentTitle"]
+  })
+);
+
+router.use(
   "/lab-workflow",
   authenticate,
   enforcePasswordChange,
@@ -739,6 +821,42 @@ router.use(
     include: [{ model: Admission }, { model: Patient }, { model: Provider }],
     searchFields: ["dischargeNumber", "finalDiagnosis"],
     createRequired: ["dischargeNumber", "admissionId", "patientId", "dischargeDate"]
+  })
+);
+
+router.use(
+  "/emergency-cases",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: CLINICAL, POST: CLINICAL, PUT: CLINICAL, DELETE: ["admin", "doctor"] }),
+  createResourceRouter(EmergencyCase, {
+    include: [{ model: Patient }, { model: Provider, as: "triagedBy" }, { model: Visit }],
+    searchFields: ["caseNumber", "chiefComplaint", "status", "triageLevel"],
+    createRequired: ["caseNumber", "arrivalAt", "patientId"]
+  })
+);
+
+router.use(
+  "/day-care-episodes",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: CLINICAL, POST: CLINICAL, PUT: CLINICAL, DELETE: ["admin", "doctor"] }),
+  createResourceRouter(DayCareEpisode, {
+    include: [{ model: Patient }, { model: Provider }],
+    searchFields: ["episodeNumber", "procedureName", "status"],
+    createRequired: ["episodeNumber", "patientId"]
+  })
+);
+
+router.use(
+  "/patient-monitoring-records",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: CLINICAL, POST: CLINICAL, PUT: CLINICAL, DELETE: ["admin", "doctor"] }),
+  createResourceRouter(PatientMonitoringRecord, {
+    include: [{ model: Patient }, { model: Encounter }, { model: Provider }],
+    searchFields: ["recordNumber", "alertLevel"],
+    createRequired: ["recordNumber", "patientId"]
   })
 );
 
@@ -890,6 +1008,49 @@ router.use(
 );
 
 router.use(
+  "/chat-threads",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: ALL, PUT: ALL, DELETE: ["admin"] }),
+  createResourceRouter(ChatThread, {
+    include: [{ model: ChatThreadParticipant, as: "participants", include: [User] }, { model: ChatMessage, as: "messages" }],
+    searchFields: ["threadNumber", "title", "threadType", "status"],
+    createRequired: ["threadNumber"]
+  })
+);
+
+router.use(
+  "/chat-thread-participants",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: ALL, PUT: ALL, DELETE: ["admin"] }),
+  createResourceRouter(ChatThreadParticipant, {
+    include: [{ model: ChatThread }, { model: User }],
+    createRequired: ["chatThreadId", "userId"]
+  })
+);
+
+router.use(
+  "/chat-messages",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: ALL, PUT: ALL, DELETE: ["admin"] }),
+  createResourceRouter(ChatMessage, {
+    include: [{ model: ChatThread }, { model: User, as: "sender" }],
+    searchFields: ["messageNumber", "messageType", "body"],
+    createRequired: ["messageNumber", "chatThreadId", "body"]
+  })
+);
+
+router.use(
+  "/chat",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: ALL }),
+  chatRoutes
+);
+
+router.use(
   "/portal",
   authenticate,
   enforcePasswordChange,
@@ -949,6 +1110,17 @@ router.use(
 );
 
 router.use(
+  "/accounting-periods",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ["admin"], POST: ["admin"], PUT: ["admin"], DELETE: ["admin"] }),
+  createResourceRouter(AccountingPeriod, {
+    searchFields: ["periodCode", "periodName", "status"],
+    createRequired: ["periodCode", "periodName", "fiscalYear", "startDate", "endDate"]
+  })
+);
+
+router.use(
   "/chart-accounts",
   authenticate,
   enforcePasswordChange,
@@ -965,10 +1137,59 @@ router.use(
   enforcePasswordChange,
   authorize({ GET: ["admin"], POST: ["admin"], PUT: ["admin"], DELETE: ["admin"] }),
   createResourceRouter(JournalEntry, {
-    include: [{ model: ChartAccount }],
-    searchFields: ["entryNumber", "description", "status"],
-    createRequired: ["entryNumber", "entryDate", "debitAmount", "creditAmount", "chartAccountId"]
+    include: [
+      { model: ChartAccount },
+      { model: AccountingPeriod },
+      { model: JournalEntryLine, as: "lines", include: [ChartAccount] }
+    ],
+    searchFields: ["entryNumber", "referenceNumber", "description", "status"],
+    createRequired: ["entryNumber", "entryDate"]
   })
+);
+
+router.use(
+  "/journal-entry-lines",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ["admin"], POST: ["admin"], PUT: ["admin"], DELETE: ["admin"] }),
+  createResourceRouter(JournalEntryLine, {
+    include: [{ model: JournalEntry }, { model: ChartAccount }],
+    createRequired: ["journalEntryId", "chartAccountId"]
+  })
+);
+
+router.use(
+  "/budgets",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ["admin"], POST: ["admin"], PUT: ["admin"], DELETE: ["admin"] }),
+  createResourceRouter(Budget, {
+    include: [
+      { model: AccountingPeriod },
+      { model: BudgetLine, as: "lines", include: [ChartAccount] }
+    ],
+    searchFields: ["budgetCode", "budgetName", "status"],
+    createRequired: ["budgetCode", "budgetName", "fiscalYear"]
+  })
+);
+
+router.use(
+  "/budget-lines",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ["admin"], POST: ["admin"], PUT: ["admin"], DELETE: ["admin"] }),
+  createResourceRouter(BudgetLine, {
+    include: [{ model: Budget }, { model: ChartAccount }],
+    createRequired: ["budgetId", "chartAccountId", "annualAmount"]
+  })
+);
+
+router.use(
+  "/accounting",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ["admin"], POST: ["admin"] }),
+  accountingRoutes
 );
 
 router.use(
@@ -1193,6 +1414,14 @@ router.use(
   enforcePasswordChange,
   authorize({ GET: ALL }),
   calendarRoutes
+);
+
+router.use(
+  "/operations",
+  authenticate,
+  enforcePasswordChange,
+  authorize({ GET: ALL, POST: ALL }),
+  operationsRoutes
 );
 
 router.use(
