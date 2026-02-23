@@ -16,6 +16,8 @@ const {
 } = require("./models");
 
 const port = process.env.PORT || 4000;
+const dbSyncForce = process.env.DB_SYNC_FORCE === "true";
+const dbSyncAlter = process.env.DB_SYNC_ALTER === "true";
 
 async function seed() {
   const [dept] = await Department.findOrCreate({
@@ -132,7 +134,13 @@ async function seed() {
 async function start() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    if (dbSyncForce) {
+      await sequelize.sync({ force: true });
+    } else if (dbSyncAlter) {
+      await sequelize.sync({ alter: true });
+    } else {
+      await sequelize.sync();
+    }
     await seed();
     const server = http.createServer(app);
     initChatWebSocketServer(server);

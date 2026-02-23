@@ -1,6 +1,6 @@
 const { Sequelize } = require("sequelize");
 
-const dbStorage = process.env.DB_STORAGE || "./database.sqlite";
+const dbStorage = process.env.DB_STORAGE || "./db.sqlite";
 
 const sequelize = new Sequelize({
   dialect: "sqlite",

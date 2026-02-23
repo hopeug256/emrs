@@ -77,7 +77,7 @@ This project is a lightweight OpenMRS-inspired hospital management system with t
 cd backend
 npm install
 cp .env.example .env
-npm run dev
+npm start
 ```
 
 Backend runs at `http://localhost:4000`.
@@ -87,10 +87,10 @@ Backend runs at `http://localhost:4000`.
 ```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
-Frontend runs at `http://localhost:5173`.
+Frontend runs at `http://localhost:5000`.
 
 ## Notes
 

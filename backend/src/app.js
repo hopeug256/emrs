@@ -4,9 +4,14 @@ const routes = require("./routes");
 
 const app = express();
 
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5000,http://localhost:5173,http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"]
+    origin: allowedOrigins
   })
 );
 app.use(

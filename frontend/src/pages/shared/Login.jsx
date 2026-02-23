@@ -44,6 +44,7 @@ function Login({ onLogin }) {
             <input
               className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-400 focus:ring-2"
               type="password"
+              autoComplete="current-password"
               value={form.password}
               onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
               required
