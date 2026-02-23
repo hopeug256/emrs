@@ -81,6 +81,7 @@ npm start
 ```
 
 Backend runs at `http://localhost:4000`.
+Set MySQL credentials in `backend/.env` before start (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) and create the `DB_NAME` database first.
 
 ## Run frontend
 
@@ -90,11 +91,11 @@ npm install
 npm start
 ```
 
-Frontend runs at `http://localhost:5000`.
+Frontend runs at `http://localhost:3000` by default; if that port is busy, Vite will try `http://localhost:3001` and then `http://localhost:3002` (next available port).
 
 ## Notes
 
-- Backend uses SQLite by default for quick local setup.
+- Backend uses MySQL (via Sequelize).
 - On startup, backend auto-syncs Sequelize models.
 - CORS is enabled for frontend-to-backend communication.
 - JWT authentication and role-based access control (RBAC) are enabled.

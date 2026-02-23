@@ -4,7 +4,7 @@ const routes = require("./routes");
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5000,http://localhost:5173,http://localhost:3000")
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:5000,http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
